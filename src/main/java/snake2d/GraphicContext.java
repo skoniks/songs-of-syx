@@ -47,10 +47,10 @@ public class GraphicContext {
   int bi = -1;
 
   GraphicContext(SETTINGS sett) {
-    LSettings ls = getLSettings();
-    int borderLess = LSettings.screenModeBorderLess;
-    Printer.ln(ls.screenMode.get());
-    System.exit(0);
+    // LSettings ls = getLSettings();
+    // int borderLess = LSettings.screenModeBorderLess;
+    // Printer.ln(ls.screenMode.get());
+    // System.exit(0);
 
     String icons;
     boolean fullscreen;
