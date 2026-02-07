@@ -1,8 +1,10 @@
 package snake2d;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+
 import org.lwjgl.BufferUtils;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.Callbacks;
@@ -17,30 +19,14 @@ import org.lwjgl.system.Configuration;
 import org.lwjgl.system.JNI;
 import org.lwjgl.system.macosx.ObjCRuntime;
 
-import snake2d.CORE;
-import snake2d.Displays;
-import snake2d.Errors;
-import snake2d.GlHelper;
-import snake2d.GraphicsCardGetter;
-import snake2d.Printer;
-import snake2d.Renderer;
-import snake2d.RendererDebug;
-import snake2d.RendererDeffered;
-import snake2d.SETTINGS;
-import snake2d.TextureHolder;
-import snake2d._IconLoader;
+import launcher.LSettings;
 import snake2d.util.datatypes.COORDINATE;
 import snake2d.util.datatypes.Coo;
 import snake2d.util.file.FileManager;
 import snake2d.util.file.SnakeImage;
 import snake2d.util.misc.OS;
 
-@SuppressWarnings("unused")
 public class GraphicContext {
-  static {
-    System.out.println(">> OVERRIDE LOADED: snake2d.GraphicContext from "
-        + GraphicContext.class.getProtectionDomain().getCodeSource().getLocation());
-  }
 
   public final int nativeWidth;
   public final int nativeHeight;
@@ -61,6 +47,11 @@ public class GraphicContext {
   int bi = -1;
 
   GraphicContext(SETTINGS sett) {
+    LSettings ls = getLSettings();
+    int borderLess = LSettings.screenModeBorderLess;
+    Printer.ln(ls.screenMode.get());
+    System.exit(0);
+
     String icons;
     boolean fullscreen;
     this.debugAll = sett.debugMode();
@@ -467,6 +458,20 @@ public class GraphicContext {
 
     Errors.GameError get(String message) {
       return new Errors.GameError(String.valueOf(this.mess) + System.lineSeparator() + message);
+    }
+  }
+
+  //
+
+  private LSettings getLSettings() {
+    try {
+      Object s = init.settings.S.get();
+      Class<? extends Object> c = s.getClass();
+      Field f = c.getDeclaredField("settings");
+      f.setAccessible(true);
+      return (LSettings) f.get(s);
+    } catch (ReflectiveOperationException e) {
+      throw new RuntimeException("Can't access S.settings", e);
     }
   }
 }
