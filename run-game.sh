@@ -1,3 +1,5 @@
+cd ./resources/
+cp ../steam_appid.txt .
 ./jre/bin/java \
   -Dfml.earlyprogresswindow=false \
   -Dfile.encoding=UTF-8 \
