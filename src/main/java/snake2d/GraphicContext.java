@@ -5,6 +5,7 @@ import static org.lwjgl.glfw.GLFW.GLFW_ANY_RELEASE_BEHAVIOR;
 import static org.lwjgl.glfw.GLFW.GLFW_AUTO_ICONIFY;
 import static org.lwjgl.glfw.GLFW.GLFW_BLUE_BITS;
 import static org.lwjgl.glfw.GLFW.GLFW_CLIENT_API;
+import static org.lwjgl.glfw.GLFW.GLFW_COCOA_RETINA_FRAMEBUFFER;
 import static org.lwjgl.glfw.GLFW.GLFW_CONTEXT_RELEASE_BEHAVIOR;
 import static org.lwjgl.glfw.GLFW.GLFW_CONTEXT_ROBUSTNESS;
 import static org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MAJOR;
@@ -65,6 +66,7 @@ import static org.lwjgl.opengl.GL30.glBindFramebuffer;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
@@ -72,10 +74,14 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
+import org.lwjgl.glfw.GLFWNativeCocoa;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.Configuration;
+import org.lwjgl.system.JNI;
+import org.lwjgl.system.macosx.ObjCRuntime;
 
+import launcher.LSettings;
 import snake2d.Displays.DisplayMode;
 import snake2d.Errors.GameError;
 import snake2d.util.datatypes.COORDINATE;
@@ -99,6 +105,7 @@ public class GraphicContext {
   public final int displayHeight;
   public final COORDINATE blitArea;
   private volatile boolean windowIsFocused = true;
+  private boolean nativeFullscreen = false;
   final int refreshRate;
 
   private final GlHelper gl;
@@ -176,8 +183,24 @@ public class GraphicContext {
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, debugAll ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_SCALE_FRAMEBUFFER, GLFW_TRUE);
 
-    // if (OS.get() == OS.MAC)
-    // glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE);
+    int screenMode = getLSettings().screenMode.get();
+    if (sett.getWindowName() == "SOS Launcher")
+      screenMode = LSettings.screenModeWindowed;
+
+    boolean fullscreen = screenMode == LSettings.screenModeFull;
+    boolean borderless = screenMode == LSettings.screenModeBorderLess;
+    if (sett.windowFullFull())
+      fullscreen = false;
+
+    if (OS.get() == OS.MAC) {
+      if (!fullscreen)
+        glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE);
+      if (borderless) {
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+        glfwWindowHint(GLFW_DECORATED, GLFW_TRUE);
+        nativeFullscreen = true;
+      }
+    }
 
     new Displays();
 
@@ -189,29 +212,10 @@ public class GraphicContext {
     int dispWidth = wanted.width;
     int dispHeight = wanted.height;
 
-    nativeWidth = sett.getNativeWidth();
-    nativeHeight = sett.getNativeHeight();
-
-    refreshRate = wanted.refresh;
-    glfwWindowHint(GLFW_REFRESH_RATE, refreshRate);
-
     long pointer = Displays.pointer(sett.monitor());
     DisplayMode current = Displays.current(sett.monitor());
-    if (!wanted.fullScreen) {
-      if (dispWidth > current.width || dispHeight > current.height) {
-        dispWidth = current.width;
-        dispHeight = current.height;
-      }
-    }
-    displayWidth = dispWidth;
-    displayHeight = dispHeight;
 
-    boolean fullscreen = wanted.fullScreen || (displayWidth == current.width && displayHeight == current.height);
-    if (sett.windowFullFull())
-      fullscreen = false;
-    glfwWindowHint(GLFW_AUTO_ICONIFY, sett.autoIconify() ? GLFW_TRUE : GLFW_FALSE);
-
-    boolean dec = sett.decoratedWindow();
+    boolean decorated = sett.decoratedWindow();
 
     if (fullscreen) {
       GLFWVidMode vm = GLFW.glfwGetVideoMode(pointer);
@@ -219,9 +223,29 @@ public class GraphicContext {
       glfwWindowHint(GLFW_GREEN_BITS, vm.greenBits());
       glfwWindowHint(GLFW_BLUE_BITS, vm.blueBits());
       glfwWindowHint(GLFW_REFRESH_RATE, vm.refreshRate());
-    } else {
-      glfwWindowHint(GLFW_DECORATED, dec ? GLFW_TRUE : GLFW_FALSE);
+    } else if (borderless) {
+      IntBuffer wx = BufferUtils.createIntBuffer(1);
+      IntBuffer wy = BufferUtils.createIntBuffer(1);
+      IntBuffer ww = BufferUtils.createIntBuffer(1);
+      IntBuffer wh = BufferUtils.createIntBuffer(1);
+      GLFW.glfwGetMonitorWorkarea(pointer, wx, wy, ww, wh);
+      dispWidth = ww.get();
+      dispHeight = wh.get();
+    } else { // windowed
+      glfwWindowHint(GLFW_DECORATED, decorated ? GLFW_TRUE : GLFW_FALSE);
+      if (dispWidth > current.width || dispHeight > current.height) {
+        dispWidth = current.width;
+        dispHeight = current.height;
+      }
     }
+
+    displayWidth = dispWidth;
+    displayHeight = dispHeight;
+    nativeWidth = sett.getNativeWidth();
+    nativeHeight = sett.getNativeHeight();
+
+    glfwWindowHint(GLFW_REFRESH_RATE, refreshRate = wanted.refresh);
+    glfwWindowHint(GLFW_AUTO_ICONIFY, sett.autoIconify() ? GLFW_TRUE : GLFW_FALSE);
 
     try {
       Printer.ln("---attempting resolution: " + displayWidth + "x" + displayHeight + ", " + refreshRate + "Hz, "
@@ -244,21 +268,20 @@ public class GraphicContext {
 
       // Decorated windows are now moved 1/4 into screen (see launcher window)
       glfwGetMonitorPos(pointer, dx, dy);
-      if (!fullscreen && dec) {
+      if (!fullscreen && !borderless) { // windowed
         int x1 = (current.width - displayWidth) / 4;
         int y1 = (current.height - displayHeight) / 4;
         if (x1 < 0)
           x1 = 0;
         if (y1 < 0)
           y1 = 0;
-        if (dec)
+        if (decorated)
           y1 += 30;
         glfwSetWindowPos(window, x1 + dx[0], y1 + dy[0]);
       }
     }
 
     String icons = sett.getIconFolder();
-
     if (icons != null)
       _IconLoader.setIcon(window, icons);
     else
@@ -388,6 +411,9 @@ public class GraphicContext {
   void makeVisable() {
     glfwShowWindow(window);
     glfwFocusWindow(window);
+
+    if (nativeFullscreen)
+      toggleNativeFullscreen();
   }
 
   final void setTexture(TextureHolder texture) {
@@ -533,6 +559,32 @@ public class GraphicContext {
 
       }
     }
+  }
+
+  //
+
+  private LSettings getLSettings() {
+    try {
+      Object s = init.settings.S.get();
+      Class<? extends Object> c = s.getClass();
+      Field f = c.getDeclaredField("settings");
+      f.setAccessible(true);
+      return (LSettings) f.get(s);
+    } catch (ReflectiveOperationException e) {
+      throw new RuntimeException("Can't access S.settings", e);
+    }
+  }
+
+  private void toggleNativeFullscreen() {
+    Printer.ln("Attempting to toggle native fullscreen on Mac...");
+    long nsWindow = GLFWNativeCocoa.glfwGetCocoaWindow(this.window);
+    if (nsWindow == 0) {
+      Printer.ln("Cocoa: nsWindow == 0 (can't toggle fullscreen)");
+      return;
+    }
+    long selToggle = ObjCRuntime.sel_registerName("toggleFullScreen:");
+    long msgSend = ObjCRuntime.getLibrary().getFunctionAddress("objc_msgSend");
+    JNI.invokePPV(nsWindow, selToggle, ObjCRuntime.nil, msgSend);
   }
 
 }
