@@ -28,6 +28,7 @@ import static org.lwjgl.glfw.GLFW.GLFW_RED_BITS;
 import static org.lwjgl.glfw.GLFW.GLFW_REFRESH_RATE;
 import static org.lwjgl.glfw.GLFW.GLFW_RESIZABLE;
 import static org.lwjgl.glfw.GLFW.GLFW_SAMPLES;
+import static org.lwjgl.glfw.GLFW.GLFW_SCALE_FRAMEBUFFER;
 import static org.lwjgl.glfw.GLFW.GLFW_SRGB_CAPABLE;
 import static org.lwjgl.glfw.GLFW.GLFW_STENCIL_BITS;
 import static org.lwjgl.glfw.GLFW.GLFW_STEREO;
@@ -73,7 +74,6 @@ import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL11;
 import org.lwjgl.system.Configuration;
 
 import snake2d.Displays.DisplayMode;
@@ -112,7 +112,6 @@ public class GraphicContext {
   private TextureHolder texture;
 
   GraphicContext(SETTINGS sett) {
-
     debugAll = sett.debugMode();
     Configuration.DEBUG.set(debugAll);
     Configuration.DEBUG_STREAM.set(System.out);
@@ -150,10 +149,6 @@ public class GraphicContext {
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     glfwWindowHint(GLFW_FOCUSED, GLFW_TRUE);
     glfwWindowHint(GLFW_FOCUS_ON_SHOW, GLFW_TRUE);
-
-    // if (OS.get() == OS.LINUX) {
-    // glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
-    // }else
     glfwWindowHint(GLFW_FLOATING, sett.windowFloating() ? GLFW_TRUE : GLFW_FALSE);
 
     // FB hints
@@ -177,14 +172,12 @@ public class GraphicContext {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_CONTEXT_ROBUSTNESS, GLFW_NO_ROBUSTNESS);
     glfwWindowHint(GLFW_CONTEXT_RELEASE_BEHAVIOR, GLFW_ANY_RELEASE_BEHAVIOR);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL11.GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, debugAll ? GLFW_TRUE : GLFW_FALSE);
+    glfwWindowHint(GLFW_SCALE_FRAMEBUFFER, GLFW_TRUE);
 
-    glfwWindowHint(GLFW.GLFW_SCALE_FRAMEBUFFER, GLFW_TRUE);
-
-    // if (Platform.get() == Platform.MACOSX) {
-    // glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GL11.GL_FALSE);
-    // }
+    // if (OS.get() == OS.MAC)
+    // glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_FALSE);
 
     new Displays();
 
@@ -202,10 +195,10 @@ public class GraphicContext {
     refreshRate = wanted.refresh;
     glfwWindowHint(GLFW_REFRESH_RATE, refreshRate);
 
+    long pointer = Displays.pointer(sett.monitor());
     DisplayMode current = Displays.current(sett.monitor());
     if (!wanted.fullScreen) {
-      if (dispWidth > current.width
-          || dispHeight > current.height) {
+      if (dispWidth > current.width || dispHeight > current.height) {
         dispWidth = current.width;
         dispHeight = current.height;
       }
@@ -221,7 +214,7 @@ public class GraphicContext {
     boolean dec = sett.decoratedWindow();
 
     if (fullscreen) {
-      GLFWVidMode vm = GLFW.glfwGetVideoMode(Displays.pointer(sett.monitor()));
+      GLFWVidMode vm = GLFW.glfwGetVideoMode(pointer);
       glfwWindowHint(GLFW_RED_BITS, vm.redBits());
       glfwWindowHint(GLFW_GREEN_BITS, vm.greenBits());
       glfwWindowHint(GLFW_BLUE_BITS, vm.blueBits());
@@ -231,70 +224,34 @@ public class GraphicContext {
     }
 
     try {
-      Printer.ln("---attempting resolution: " + displayWidth + "x" + dispHeight + ", " + refreshRate + "Hz, "
+      Printer.ln("---attempting resolution: " + displayWidth + "x" + displayHeight + ", " + refreshRate + "Hz, "
           + (fullscreen ? (wanted.fullScreen ? "fullscreen" : "borderless") : "windowed")
-          + ", monitor " + sett.monitor() + " (" + glfwGetMonitorName(Displays.pointer(sett.monitor())) + ")");
+          + ", monitor " + sett.monitor() + " (" + glfwGetMonitorName(pointer) + ")");
 
       window = glfwCreateWindow(displayWidth, displayHeight, sett.getWindowName(),
-          fullscreen ? Displays.pointer(sett.monitor()) : NULL, NULL);
+          fullscreen ? pointer : NULL, NULL);
     } catch (Exception e) {
       e.printStackTrace();
       throw error.get("window create " + e);
     }
 
-    // remove this if if trouble
-    // if (fullscreen) {
-    // GLFWVidMode vm = GLFW.glfwGetVideoMode(Displays.pointer(sett.monitor()));
-    // glfwWindowHint(GLFW_RED_BITS, vm.redBits());
-    // glfwWindowHint(GLFW_GREEN_BITS, vm.greenBits());
-    // glfwWindowHint(GLFW_BLUE_BITS, vm.blueBits());
-    // glfwWindowHint(GLFW_REFRESH_RATE, vm.refreshRate());
-    // try {
-    // window = glfwCreateWindow(displayWidth, displayHeight, sett.getWindowName(),
-    // Displays.pointer(sett.monitor()), NULL);
-    // } catch (Exception e) {
-    // e.printStackTrace();
-    // throw error.get();
-    // }
-    //
-    // }else {
-    // glfwWindowHint(GLFW_DECORATED, dec ? GLFW_TRUE : GLFW_FALSE);
-    //
-    //
-    // try {
-    // Printer.ln("---attempting resolution: " + displayWidth + "x" + dispHeight + "
-    // " + wanted.fullScreen + " "
-    // + refreshRate + " " + sett.monitor());
-    //
-    // // Monitor is specified for full screen and for borderless full-size
-    // // Monitor is NULL for decorated windows
-    // window = glfwCreateWindow(displayWidth, displayHeight, sett.getWindowName(),
-    // wanted.fullScreen ? Displays.pointer(sett.monitor()) : NULL, NULL);
-    // } catch (Exception e) {
-    // e.printStackTrace();
-    // throw error.get();
-    // }
-    // }
-
-    if (window == NULL) {
+    if (window == NULL)
       throw error.get("window is null");
-    }
 
     {
       int[] dx = new int[1];
       int[] dy = new int[1];
 
       // Decorated windows are now moved 1/4 into screen (see launcher window)
-      glfwGetMonitorPos(Displays.pointer(sett.monitor()), dx, dy);
+      glfwGetMonitorPos(pointer, dx, dy);
       if (!fullscreen && dec) {
-        int x1 = (Displays.current(sett.monitor()).width - displayWidth) / 4;
-        int y1 = (Displays.current(sett.monitor()).height - displayHeight) / 4;
+        int x1 = (current.width - displayWidth) / 4;
+        int y1 = (current.height - displayHeight) / 4;
         if (x1 < 0)
           x1 = 0;
         if (y1 < 0)
           y1 = 0;
-
-        if (sett.decoratedWindow())
+        if (dec)
           y1 += 30;
         glfwSetWindowPos(window, x1 + dx[0], y1 + dy[0]);
       }
@@ -344,7 +301,7 @@ public class GraphicContext {
     Printer.ln("---LWJGL: " + org.lwjgl.Version.getVersion());
     Printer.ln("---GLFW: " + glfwGetVersionString());
 
-    gl = new GlHelper(sett.getNativeWidth(), sett.getNativeHeight(), debugAll);
+    gl = new GlHelper(nativeWidth, nativeHeight, debugAll);
     if (!GL.getCapabilities().OpenGL33)
       throw error.get("gl Capabilities");
 
