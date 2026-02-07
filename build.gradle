@@ -1,0 +1,23 @@
+plugins {
+    id 'java'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories { }
+
+dependencies {
+    compileOnly files(
+        'app/SongsOfSyx.jar',
+        'app/base/script/000_Tutorial.jar',
+        'app/base/script/001_Tutorial.jar'
+    )
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
