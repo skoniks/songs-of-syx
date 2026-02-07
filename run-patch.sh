@@ -1,5 +1,6 @@
-cd ./resources/
-cp ../steam_appid.txt .
+cp ./steam_appid.txt ./app/
+cp ./build/libs/syx-patch.jar ./app/
+cd ./app/
 ./jre/bin/java \
   -Dfml.earlyprogresswindow=false \
   -Dfile.encoding=UTF-8 \
@@ -8,5 +9,5 @@ cp ../steam_appid.txt .
   -XX:+UseCompressedOops \
   -XX:+UseSerialGC \
   -server \
-  -cp "base/script/001_Tutorial.jar:base/script/000_Tutorial.jar:SongsOfSyx.jar" \
+  -cp "syx-patch.jar:base/script/001_Tutorial.jar:base/script/000_Tutorial.jar:SongsOfSyx.jar" \
   init.MainProcess

@@ -1,5 +1,5 @@
-cd ./resources/
-cp ../steam_appid.txt .
+cp ./steam_appid.txt ./app/
+cd ./app/
 ./jre/bin/java \
   -Dfml.earlyprogresswindow=false \
   -Dfile.encoding=UTF-8 \
