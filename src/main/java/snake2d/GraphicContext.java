@@ -87,31 +87,31 @@ public class GraphicContext {
       throw new IllegalStateException("Unable to initialize GLFW");
     }
     GLFW.glfwDefaultWindowHints();
-    GLFW.glfwWindowHint(131075, 0);
-    GLFW.glfwWindowHint(131076, 0);
-    GLFW.glfwWindowHint(131073, 1);
-    GLFW.glfwWindowHint(131084, 1);
-    GLFW.glfwWindowHint(131079, sett.windowFloating() ? 1 : 0);
-    GLFW.glfwWindowHint(135169, 8);
-    GLFW.glfwWindowHint(135170, 8);
-    GLFW.glfwWindowHint(135171, 8);
-    GLFW.glfwWindowHint(135172, 8);
-    GLFW.glfwWindowHint(135173, 0);
-    GLFW.glfwWindowHint(135174, 0);
-    GLFW.glfwWindowHint(135181, 0);
-    GLFW.glfwWindowHint(135183, -1);
-    GLFW.glfwWindowHint(135180, 0);
-    GLFW.glfwWindowHint(135182, 0);
-    GLFW.glfwWindowHint(135184, 1);
-    GLFW.glfwWindowHint(139265, 196609);
-    GLFW.glfwWindowHint(139266, 3);
-    GLFW.glfwWindowHint(139267, 3);
-    GLFW.glfwWindowHint(139272, 204801);
-    GLFW.glfwWindowHint(139269, 0);
-    GLFW.glfwWindowHint(139273, 0);
-    GLFW.glfwWindowHint(139270, 1);
-    GLFW.glfwWindowHint(139271, this.debugAll ? 1 : 0);
-    GLFW.glfwWindowHint(139277, 1);
+    GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, GLFW.GLFW_FALSE);
+    GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
+    GLFW.glfwWindowHint(GLFW.GLFW_FOCUSED, GLFW.GLFW_TRUE);
+    GLFW.glfwWindowHint(GLFW.GLFW_FOCUS_ON_SHOW, GLFW.GLFW_TRUE);
+    GLFW.glfwWindowHint(GLFW.GLFW_FLOATING, sett.windowFloating() ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
+    GLFW.glfwWindowHint(GLFW.GLFW_RED_BITS, 8);
+    GLFW.glfwWindowHint(GLFW.GLFW_GREEN_BITS, 8);
+    GLFW.glfwWindowHint(GLFW.GLFW_BLUE_BITS, 8);
+    GLFW.glfwWindowHint(GLFW.GLFW_ALPHA_BITS, 8);
+    GLFW.glfwWindowHint(GLFW.GLFW_DEPTH_BITS, 0);
+    GLFW.glfwWindowHint(GLFW.GLFW_STENCIL_BITS, 0);
+    GLFW.glfwWindowHint(GLFW.GLFW_SAMPLES, 0);
+    GLFW.glfwWindowHint(GLFW.GLFW_REFRESH_RATE, -1);
+    GLFW.glfwWindowHint(GLFW.GLFW_STEREO, GLFW.GLFW_FALSE);
+    GLFW.glfwWindowHint(GLFW.GLFW_SRGB_CAPABLE, GLFW.GLFW_FALSE);
+    GLFW.glfwWindowHint(GLFW.GLFW_DOUBLEBUFFER, GLFW.GLFW_TRUE);
+    GLFW.glfwWindowHint(GLFW.GLFW_CLIENT_API, GLFW.GLFW_OPENGL_API);
+    GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
+    GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
+    GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
+    GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_ROBUSTNESS, 0);
+    GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_RELEASE_BEHAVIOR, 0);
+    GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, GLFW.GLFW_TRUE);
+    GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_DEBUG, this.debugAll ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
+    GLFW.glfwWindowHint(GLFW.GLFW_SCALE_FRAMEBUFFER, GLFW.GLFW_TRUE);
     new Displays();
     this.printSettings(sett);
     Printer.ln("GRAPHICS");
@@ -121,7 +121,7 @@ public class GraphicContext {
     this.nativeWidth = sett.getNativeWidth();
     this.nativeHeight = sett.getNativeHeight();
     this.refreshRate = wanted.refresh;
-    GLFW.glfwWindowHint(135183, this.refreshRate);
+    GLFW.glfwWindowHint(GLFW.GLFW_REFRESH_RATE, this.refreshRate);
     Displays.DisplayMode current = Displays.current(sett.monitor());
     if (!(wanted.fullScreen || dispWidth <= current.width && dispHeight <= current.height)) {
       dispWidth = current.width;
@@ -133,16 +133,16 @@ public class GraphicContext {
     if (sett.windowFullFull()) {
       fullscreen = false;
     }
-    GLFW.glfwWindowHint(131078, sett.autoIconify() ? 1 : 0);
+    GLFW.glfwWindowHint(GLFW.GLFW_AUTO_ICONIFY, sett.autoIconify() ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
     boolean dec = sett.decoratedWindow();
     if (fullscreen) {
       GLFWVidMode vm = GLFW.glfwGetVideoMode(Displays.pointer(sett.monitor()));
-      GLFW.glfwWindowHint(135169, vm.redBits());
-      GLFW.glfwWindowHint(135170, vm.greenBits());
-      GLFW.glfwWindowHint(135171, vm.blueBits());
-      GLFW.glfwWindowHint(135183, vm.refreshRate());
+      GLFW.glfwWindowHint(GLFW.GLFW_RED_BITS, vm.redBits());
+      GLFW.glfwWindowHint(GLFW.GLFW_GREEN_BITS, vm.greenBits());
+      GLFW.glfwWindowHint(GLFW.GLFW_BLUE_BITS, vm.blueBits());
+      GLFW.glfwWindowHint(GLFW.GLFW_REFRESH_RATE, vm.refreshRate());
     } else {
-      GLFW.glfwWindowHint(131077, dec ? 1 : 0);
+      GLFW.glfwWindowHint(GLFW.GLFW_DECORATED, dec ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
     }
     try {
       Printer.ln("---attempting resolution: " + this.displayWidth + "x" + dispHeight + ", " + this.refreshRate + "Hz, "
@@ -285,7 +285,7 @@ public class GraphicContext {
     GL30.glBindFramebuffer(36008, 0);
     GLFW.glfwSwapBuffers(this.window);
     GL30.glBindFramebuffer(36008, this.bi);
-    this.windowIsFocused = GLFW.glfwGetWindowAttrib(this.window, 131073) == 1;
+    this.windowIsFocused = GLFW.glfwGetWindowAttrib(this.window, GLFW.GLFW_FOCUSED) == 1;
     this.diagnose(false);
     if (this.debugAll && (this.chi & 0xFF) == 0) {
       GlHelper.checkErrors();
