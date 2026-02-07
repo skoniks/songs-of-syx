@@ -112,11 +112,14 @@ public class GraphicContext {
     GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, GLFW.GLFW_TRUE);
     GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_DEBUG, this.debugAll ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
     GLFW.glfwWindowHint(GLFW.GLFW_SCALE_FRAMEBUFFER, GLFW.GLFW_TRUE);
+    if (OS.get() == OS.MAC) {
+      GLFW.glfwWindowHint(GLFW.GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW.GLFW_FALSE);
+    }
     new Displays();
     this.printSettings(sett);
     Printer.ln("GRAPHICS");
     Displays.DisplayMode wanted = sett.display();
-    Printer.ln("WANTED: " + wanted);
+    Printer.ln("WANTED: " + wanted + ", " + (wanted.fullScreen ? "fullscreen" : "windowed"));
     int dispWidth = wanted.width;
     int dispHeight = wanted.height;
     this.nativeWidth = sett.getNativeWidth();
@@ -124,20 +127,27 @@ public class GraphicContext {
     this.refreshRate = wanted.refresh;
     GLFW.glfwWindowHint(GLFW.GLFW_REFRESH_RATE, this.refreshRate);
     Displays.DisplayMode current = Displays.current(sett.monitor());
-    Printer.ln("CURRENT: " + current);
-    // System.exit(0);
+    Printer.ln("CURRENT: " + current + ", " + (current.fullScreen ? "fullscreen" : "windowed"));
     if (!(wanted.fullScreen || dispWidth <= current.width && dispHeight <= current.height)) {
       dispWidth = current.width;
       dispHeight = current.height;
     }
+    fullscreen = wanted.fullScreen || dispWidth == current.width && dispHeight == current.height;
+    boolean dec = sett.decoratedWindow();
+    if (fullscreen && sett.windowFullFull()) {
+      fullscreen = false;
+      IntBuffer wx = BufferUtils.createIntBuffer(1);
+      IntBuffer wy = BufferUtils.createIntBuffer(1);
+      IntBuffer ww = BufferUtils.createIntBuffer(1);
+      IntBuffer wh = BufferUtils.createIntBuffer(1);
+      GLFW.glfwGetMonitorWorkarea(Displays.pointer(sett.monitor()), wx, wy, ww, wh);
+      dispWidth = ww.get();
+      dispHeight = wh.get() - (dec ? 30 : 0);
+      Printer.ln("WORKAREA: " + wx.get() + "x" + wy.get() + ", " + dispWidth + "x" + dispHeight);
+    }
     this.displayWidth = dispWidth;
     this.displayHeight = dispHeight;
-    fullscreen = wanted.fullScreen || this.displayWidth == current.width && this.displayHeight == current.height;
-    if (sett.windowFullFull()) {
-      fullscreen = false;
-    }
     GLFW.glfwWindowHint(GLFW.GLFW_AUTO_ICONIFY, sett.autoIconify() ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
-    boolean dec = sett.decoratedWindow();
     if (fullscreen) {
       GLFWVidMode vm = GLFW.glfwGetVideoMode(Displays.pointer(sett.monitor()));
       GLFW.glfwWindowHint(GLFW.GLFW_RED_BITS, vm.redBits());
@@ -173,7 +183,7 @@ public class GraphicContext {
       if (y1 < 0) {
         y1 = 0;
       }
-      if (sett.decoratedWindow()) {
+      if (dec) {
         y1 += 30;
       }
       GLFW.glfwSetWindowPos(this.window, x1 + dx[0], y1 + dy[0]);
@@ -240,6 +250,7 @@ public class GraphicContext {
     }
     GLFW.glfwFocusWindow(this.window);
     GlHelper.checkErrors();
+    // System.exit(0);
   }
 
   public String render() {
