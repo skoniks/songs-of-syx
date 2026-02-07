@@ -1,477 +1,588 @@
 package snake2d;
 
+import static org.lwjgl.glfw.GLFW.GLFW_ALPHA_BITS;
+import static org.lwjgl.glfw.GLFW.GLFW_ANY_RELEASE_BEHAVIOR;
+import static org.lwjgl.glfw.GLFW.GLFW_AUTO_ICONIFY;
+import static org.lwjgl.glfw.GLFW.GLFW_BLUE_BITS;
+import static org.lwjgl.glfw.GLFW.GLFW_CLIENT_API;
+import static org.lwjgl.glfw.GLFW.GLFW_CONTEXT_RELEASE_BEHAVIOR;
+import static org.lwjgl.glfw.GLFW.GLFW_CONTEXT_ROBUSTNESS;
+import static org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MAJOR;
+import static org.lwjgl.glfw.GLFW.GLFW_CONTEXT_VERSION_MINOR;
+import static org.lwjgl.glfw.GLFW.GLFW_DECORATED;
+import static org.lwjgl.glfw.GLFW.GLFW_DEPTH_BITS;
+import static org.lwjgl.glfw.GLFW.GLFW_DONT_CARE;
+import static org.lwjgl.glfw.GLFW.GLFW_DOUBLEBUFFER;
+import static org.lwjgl.glfw.GLFW.GLFW_FALSE;
+import static org.lwjgl.glfw.GLFW.GLFW_FLOATING;
+import static org.lwjgl.glfw.GLFW.GLFW_FOCUSED;
+import static org.lwjgl.glfw.GLFW.GLFW_FOCUS_ON_SHOW;
+import static org.lwjgl.glfw.GLFW.GLFW_GREEN_BITS;
+import static org.lwjgl.glfw.GLFW.GLFW_NO_ROBUSTNESS;
+import static org.lwjgl.glfw.GLFW.GLFW_OPENGL_API;
+import static org.lwjgl.glfw.GLFW.GLFW_OPENGL_CORE_PROFILE;
+import static org.lwjgl.glfw.GLFW.GLFW_OPENGL_DEBUG_CONTEXT;
+import static org.lwjgl.glfw.GLFW.GLFW_OPENGL_FORWARD_COMPAT;
+import static org.lwjgl.glfw.GLFW.GLFW_OPENGL_PROFILE;
+import static org.lwjgl.glfw.GLFW.GLFW_RED_BITS;
+import static org.lwjgl.glfw.GLFW.GLFW_REFRESH_RATE;
+import static org.lwjgl.glfw.GLFW.GLFW_RESIZABLE;
+import static org.lwjgl.glfw.GLFW.GLFW_SAMPLES;
+import static org.lwjgl.glfw.GLFW.GLFW_SRGB_CAPABLE;
+import static org.lwjgl.glfw.GLFW.GLFW_STENCIL_BITS;
+import static org.lwjgl.glfw.GLFW.GLFW_STEREO;
+import static org.lwjgl.glfw.GLFW.GLFW_TRUE;
+import static org.lwjgl.glfw.GLFW.GLFW_VISIBLE;
+import static org.lwjgl.glfw.GLFW.glfwCreateWindow;
+import static org.lwjgl.glfw.GLFW.glfwDefaultWindowHints;
+import static org.lwjgl.glfw.GLFW.glfwDestroyWindow;
+import static org.lwjgl.glfw.GLFW.glfwExtensionSupported;
+import static org.lwjgl.glfw.GLFW.glfwFocusWindow;
+import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;
+import static org.lwjgl.glfw.GLFW.glfwGetMonitorName;
+import static org.lwjgl.glfw.GLFW.glfwGetMonitorPos;
+import static org.lwjgl.glfw.GLFW.glfwGetPrimaryMonitor;
+import static org.lwjgl.glfw.GLFW.glfwGetVersionString;
+import static org.lwjgl.glfw.GLFW.glfwGetVideoMode;
+import static org.lwjgl.glfw.GLFW.glfwGetWindowAttrib;
+import static org.lwjgl.glfw.GLFW.glfwGetWindowMonitor;
+import static org.lwjgl.glfw.GLFW.glfwInit;
+import static org.lwjgl.glfw.GLFW.glfwMakeContextCurrent;
+import static org.lwjgl.glfw.GLFW.glfwPollEvents;
+import static org.lwjgl.glfw.GLFW.glfwSetErrorCallback;
+import static org.lwjgl.glfw.GLFW.glfwSetWindowPos;
+import static org.lwjgl.glfw.GLFW.glfwShowWindow;
+import static org.lwjgl.glfw.GLFW.glfwSwapBuffers;
+import static org.lwjgl.glfw.GLFW.glfwSwapInterval;
+import static org.lwjgl.glfw.GLFW.glfwTerminate;
+import static org.lwjgl.glfw.GLFW.glfwWindowHint;
+import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
+import static org.lwjgl.opengl.GL11.glGetInteger;
+import static org.lwjgl.opengl.GL30.GL_READ_FRAMEBUFFER;
+import static org.lwjgl.opengl.GL30.GL_READ_FRAMEBUFFER_BINDING;
+import static org.lwjgl.opengl.GL30.glBindFramebuffer;
+import static org.lwjgl.system.MemoryUtil.NULL;
+
 import java.io.File;
-import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
 import org.lwjgl.BufferUtils;
-import org.lwjgl.Version;
 import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
-import org.lwjgl.glfw.GLFWNativeCocoa;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.Configuration;
-import org.lwjgl.system.JNI;
-import org.lwjgl.system.macosx.ObjCRuntime;
 
-import launcher.LSettings;
+import snake2d.Displays.DisplayMode;
+import snake2d.Errors.GameError;
 import snake2d.util.datatypes.COORDINATE;
 import snake2d.util.datatypes.Coo;
 import snake2d.util.file.FileManager;
 import snake2d.util.file.SnakeImage;
 import snake2d.util.misc.OS;
 
+/**
+ * The magic entrance to the game. The mother of classes. Sets up the display,
+ * gl-contex, input and renderer
+ * 
+ * @author mail__000
+ *
+ */
 public class GraphicContext {
 
-  public final int nativeWidth;
-  public final int nativeHeight;
-  public final int displayWidth;
-  public final int displayHeight;
-  public final COORDINATE blitArea;
-  private boolean windowIsFocused = true;
-  final int refreshRate;
-  private final GlHelper gl;
-  private final long window;
-  final Renderer renderer;
-  final String screenShotPath;
-  static boolean diagnosing = false;
-  private static int diagnoseTimer = 0;
-  private final boolean debugAll;
-  private TextureHolder texture;
-  int chi = 0;
-  int bi = -1;
+	public final int nativeWidth;
+	public final int nativeHeight;
+	public final int displayWidth;
+	public final int displayHeight;
+	public final COORDINATE blitArea;
+	private volatile boolean windowIsFocused = true;
+	final int refreshRate;
 
-  GraphicContext(SETTINGS sett) {
-    // LSettings ls = getLSettings();
-    // int borderLess = LSettings.screenModeBorderLess;
-    // Printer.ln(ls.screenMode.get());
-    // System.exit(0);
+	private final GlHelper gl;
+	private final long window;
+	final Renderer renderer;
+	final String screenShotPath;
+	static boolean diagnosing = false;
+	private static int diagnoseTimer = 0;
+	private final boolean debugAll;
+	
+	private TextureHolder texture;
 
-    String icons;
-    boolean fullscreen;
-    this.debugAll = sett.debugMode();
-    Configuration.DEBUG.set(this.debugAll);
-    Configuration.DEBUG_STREAM.set(System.out);
-    Configuration.DEBUG_MEMORY_ALLOCATOR.set(this.debugAll);
-    Configuration.DEBUG_STACK.set(this.debugAll);
-    Error error = new Error();
-    if (sett.getScreenshotFolder() != null) {
-      this.screenShotPath = sett.getScreenshotFolder();
-    } else {
-      File f = new File("screenshots");
-      if (f.exists() && !f.isDirectory()) {
-        f.delete();
-      }
-      if (!f.exists()) {
-        f.mkdirs();
-      }
-      this.screenShotPath = String.valueOf(f.getAbsolutePath()) + File.separator;
-    }
-    if (sett.getPointSize() != 1 && sett.getPointSize() % 2 != 0) {
-      throw new RuntimeException("pointsize must be a power of two!");
-    }
-    if (this.debugAll) {
-      GLFWErrorCallback.createPrint(System.out).set();
-    }
-    if (!GLFW.glfwInit()) {
-      throw new IllegalStateException("Unable to initialize GLFW");
-    }
-    boolean mac = OS.get() == OS.MAC;
-    boolean dec = mac || sett.decoratedWindow();
-    GLFW.glfwDefaultWindowHints();
-    GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, mac ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
-    GLFW.glfwWindowHint(GLFW.GLFW_DECORATED, dec ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
-    GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
-    GLFW.glfwWindowHint(GLFW.GLFW_FOCUSED, GLFW.GLFW_TRUE);
-    GLFW.glfwWindowHint(GLFW.GLFW_FOCUS_ON_SHOW, GLFW.GLFW_TRUE);
-    GLFW.glfwWindowHint(GLFW.GLFW_FLOATING, sett.windowFloating() ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
-    GLFW.glfwWindowHint(GLFW.GLFW_RED_BITS, 8);
-    GLFW.glfwWindowHint(GLFW.GLFW_GREEN_BITS, 8);
-    GLFW.glfwWindowHint(GLFW.GLFW_BLUE_BITS, 8);
-    GLFW.glfwWindowHint(GLFW.GLFW_ALPHA_BITS, 8);
-    GLFW.glfwWindowHint(GLFW.GLFW_DEPTH_BITS, 0);
-    GLFW.glfwWindowHint(GLFW.GLFW_STENCIL_BITS, 0);
-    GLFW.glfwWindowHint(GLFW.GLFW_SAMPLES, 0);
-    GLFW.glfwWindowHint(GLFW.GLFW_REFRESH_RATE, -1);
-    GLFW.glfwWindowHint(GLFW.GLFW_STEREO, GLFW.GLFW_FALSE);
-    GLFW.glfwWindowHint(GLFW.GLFW_SRGB_CAPABLE, GLFW.GLFW_FALSE);
-    GLFW.glfwWindowHint(GLFW.GLFW_DOUBLEBUFFER, GLFW.GLFW_TRUE);
-    GLFW.glfwWindowHint(GLFW.GLFW_CLIENT_API, GLFW.GLFW_OPENGL_API);
-    GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
-    GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
-    GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
-    GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_ROBUSTNESS, 0);
-    GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_RELEASE_BEHAVIOR, 0);
-    GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, GLFW.GLFW_TRUE);
-    GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_DEBUG, this.debugAll ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
-    GLFW.glfwWindowHint(GLFW.GLFW_SCALE_FRAMEBUFFER, GLFW.GLFW_TRUE);
-    GLFW.glfwWindowHint(GLFW.GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW.GLFW_FALSE);
-    GLFW.glfwWindowHint(GLFW.GLFW_AUTO_ICONIFY, sett.autoIconify() ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
-    new Displays();
-    this.printSettings(sett);
-    Printer.ln("GRAPHICS");
-    Displays.DisplayMode wanted = sett.display();
-    Printer.ln("WANTED: " + wanted + ", " + (wanted.fullScreen ? "fullscreen" : "windowed"));
-    long pointer = Displays.pointer(sett.monitor());
-    int dispWidth = wanted.width;
-    int dispHeight = wanted.height;
-    this.nativeWidth = sett.getNativeWidth();
-    this.nativeHeight = sett.getNativeHeight();
-    this.refreshRate = wanted.refresh;
-    GLFW.glfwWindowHint(GLFW.GLFW_REFRESH_RATE, this.refreshRate);
-    Displays.DisplayMode current = Displays.current(sett.monitor());
-    Printer.ln("CURRENT: " + current + ", " + (current.fullScreen ? "fullscreen" : "windowed"));
-    if (!(wanted.fullScreen || dispWidth <= current.width && dispHeight <= current.height)) {
-      dispWidth = current.width;
-      dispHeight = current.height;
-    }
-    fullscreen = wanted.fullScreen || dispWidth == current.width && dispHeight == current.height;
-    if (fullscreen && sett.windowFullFull()) {
-      fullscreen = false;
-      IntBuffer wx = BufferUtils.createIntBuffer(1);
-      IntBuffer wy = BufferUtils.createIntBuffer(1);
-      IntBuffer ww = BufferUtils.createIntBuffer(1);
-      IntBuffer wh = BufferUtils.createIntBuffer(1);
-      GLFW.glfwGetMonitorWorkarea(pointer, wx, wy, ww, wh);
-      dispWidth = ww.get();
-      dispHeight = wh.get();
-    }
-    this.displayWidth = dispWidth;
-    this.displayHeight = dispHeight;
-    if (fullscreen) {
-      GLFWVidMode vm = GLFW.glfwGetVideoMode(pointer);
-      GLFW.glfwWindowHint(GLFW.GLFW_RED_BITS, vm.redBits());
-      GLFW.glfwWindowHint(GLFW.GLFW_GREEN_BITS, vm.greenBits());
-      GLFW.glfwWindowHint(GLFW.GLFW_BLUE_BITS, vm.blueBits());
-      GLFW.glfwWindowHint(GLFW.GLFW_REFRESH_RATE, vm.refreshRate());
-    }
-    try {
-      Printer.ln(
-          "---attempting resolution: " + this.displayWidth + "x" + this.displayHeight + ", " + this.refreshRate + "Hz, "
-              + (fullscreen ? (wanted.fullScreen ? "fullscreen" : "borderless") : "windowed") + ", monitor "
-              + sett.monitor() + " (" + GLFW.glfwGetMonitorName(pointer) + ")");
-      this.window = GLFW.glfwCreateWindow(this.displayWidth, this.displayHeight, sett.getWindowName(),
-          fullscreen ? pointer : 0L, 0L);
-    } catch (Exception e) {
-      e.printStackTrace();
-      throw error.get("window create " + e);
-    }
-    if (this.window == 0L) {
-      throw error.get("window is null");
-    }
-    int[] dx = new int[1];
-    int[] dy = new int[1];
-    GLFW.glfwGetMonitorPos(pointer, dx, dy);
-    if (!fullscreen && dec) {
-      int x1 = (Displays.current((int) sett.monitor()).width - this.displayWidth) / 4;
-      int y1 = (Displays.current((int) sett.monitor()).height - this.displayHeight) / 4;
-      if (x1 < 0) {
-        x1 = 0;
-      }
-      if (y1 < 0) {
-        y1 = 0;
-      }
-      if (dec) {
-        y1 += 30;
-      }
-      GLFW.glfwSetWindowPos(this.window, x1 + dx[0], y1 + dy[0]);
-    }
-    if ((icons = sett.getIconFolder()) != null) {
-      _IconLoader.setIcon(this.window, icons);
-    } else {
-      Printer.ln("NOTE: no icon-folder specified");
-    }
-    try {
-      GLFW.glfwMakeContextCurrent(this.window);
-    } catch (Exception e) {
-      e.printStackTrace();
-      throw error.get("make current " + e);
-    }
-    long monitor = GLFW.glfwGetWindowMonitor(this.window);
-    if (monitor == 0L) {
-      monitor = GLFW.glfwGetPrimaryMonitor();
-    }
-    GLFWVidMode vidMode = GLFW.glfwGetVideoMode(monitor);
-    Printer.ln("---Setting FPS to " + vidMode.refreshRate());
-    int swapInterval = 0;
-    if (sett.getVSynchEnabled() || sett.vsyncAdaptive()) {
-      swapInterval = 1;
-      int r = this.refreshRate;
-      while (vidMode.refreshRate() >= r * 2) {
-        r *= 2;
-        ++swapInterval;
-      }
-      if (sett.vsyncAdaptive() && (GLFW.glfwExtensionSupported("WGL_EXT_swap_control_tear")
-          || GLFW.glfwExtensionSupported("GLX_EXT_swap_control_tear"))) {
-        Printer.ln("---'Adaptive' Vsync enabled (" + swapInterval + ")");
-        swapInterval *= -1;
-      }
-    }
-    GLFW.glfwSwapInterval(swapInterval);
-    Printer.ln("---created resolution: " + vidMode.width() + "x" + vidMode.height() + ", " + vidMode.refreshRate()
-        + "Hz" + (sett.getVSynchEnabled() ? ", vsync: " + swapInterval : ""));
-    Printer.ln("---LWJGL: " + Version.getVersion());
-    Printer.ln("---GLFW: " + GLFW.glfwGetVersionString());
-    this.gl = new GlHelper(sett.getNativeWidth(), sett.getNativeHeight(), this.debugAll);
-    if (!GL.getCapabilities().OpenGL33) {
-      throw error.get("gl Capabilities");
-    }
-    if (OS.get() == OS.MAC) {
-      this.blitArea = new Coo(GlHelper.FBSize());
-    } else {
-      IntBuffer w = BufferUtils.createIntBuffer(1);
-      IntBuffer h = BufferUtils.createIntBuffer(1);
-      GLFW.glfwGetFramebufferSize(this.window, w, h);
-      Coo sc = new Coo(w.get(), h.get());
-      this.blitArea = new Coo(sc.x(), sc.y());
-    }
-    Printer.ln("---BLIT: " + this.blitArea.x() + "x" + this.blitArea.y());
-    Printer.fin();
-    switch (sett.getRenderMode()) {
-      case 0: {
-        this.renderer = new RendererDebug(sett, sett.getPointSize());
-        break;
-      }
-      default: {
-        this.renderer = new RendererDeffered(sett, sett.getPointSize());
-      }
-    }
-    GLFW.glfwFocusWindow(this.window);
-    GlHelper.checkErrors();
-    // System.exit(0);
-  }
+	GraphicContext(SETTINGS sett) {
 
-  private void macToggleNativeFullscreen() {
-    if (OS.get() != OS.MAC)
-      return;
+		debugAll = sett.debugMode();
+		Configuration.DEBUG.set(debugAll);
+		Configuration.DEBUG_STREAM.set(System.out);
+		Configuration.DEBUG_MEMORY_ALLOCATOR.set(debugAll);
+		Configuration.DEBUG_STACK.set(debugAll);
 
-    Printer.ln("Attempting to toggle native fullscreen on Mac...");
+		Error error = new Error();
 
-    // NSWindow* из GLFW
-    long nsWindow = GLFWNativeCocoa.glfwGetCocoaWindow(this.window);
-    if (nsWindow == 0L) {
-      Printer.ln("Cocoa: nsWindow == 0 (can't toggle fullscreen)");
-      return;
-    }
+		{
+			if (sett.getScreenshotFolder() != null)
+				screenShotPath = sett.getScreenshotFolder();
+			else {
+				File f = new File("screenshots");
+				if (f.exists() && !f.isDirectory()) {
+					f.delete();
+				}
+				if (!f.exists())
+					f.mkdirs();
+				screenShotPath = f.getAbsolutePath() + File.separator;
+			}
+		}
 
-    // selector: toggleFullScreen:
-    long selToggle = ObjCRuntime.sel_registerName("toggleFullScreen:");
+		if (sett.getPointSize() != 1 && sett.getPointSize() % 2 != 0)
+			throw new RuntimeException("pointsize must be a power of two!");
 
-    // В Objective-C метод принимает sender (id), можно передать nil
-    // Важно: используем invokePPV (receiver, selector, arg) -> void
-    JNI.invokePPV(nsWindow, selToggle, ObjCRuntime.nil, ObjCRuntime.getLibrary().getFunctionAddress("objc_msgSend"));
-  }
+		if (debugAll)
+			GLFWErrorCallback.createPrint(System.out).set();
 
-  public String render() {
-    return GlHelper.renderer;
-  }
+		if (!glfwInit())
+			throw new IllegalStateException("Unable to initialize GLFW");
 
-  public String renderV() {
-    return GlHelper.rendererV;
-  }
+		
+		
+		// window hints
+		glfwDefaultWindowHints();
+		glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+		glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+		glfwWindowHint(GLFW_FOCUSED, GLFW_TRUE);
+		glfwWindowHint(GLFW_FOCUS_ON_SHOW, GLFW_TRUE);
+		
+//		if (OS.get() == OS.LINUX) {
+//			glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
+//		}else
+		glfwWindowHint(GLFW_FLOATING, sett.windowFloating() ? GLFW_TRUE: GLFW_FALSE);
+		
+		
+		// FB hints
+		glfwWindowHint(GLFW_RED_BITS, 8);
+		glfwWindowHint(GLFW_GREEN_BITS, 8);
+		glfwWindowHint(GLFW_BLUE_BITS, 8);
+		glfwWindowHint(GLFW_ALPHA_BITS, 8);
+		glfwWindowHint(GLFW_DEPTH_BITS, 0);
+		glfwWindowHint(GLFW_STENCIL_BITS, 0);
 
-  private void printSettings(SETTINGS sett) {
-    Printer.ln("SETTINGS");
-    Printer.ln("Debug: " + sett.debugMode());
-    Printer.ln("Native Screen: " + sett.getNativeWidth() + "x" + sett.getNativeHeight());
-    Printer.ln("Display: " + sett.display());
-    Printer.ln("Full: " + sett.display().fullScreen);
-    Printer.ln("Mode: " + sett.getRenderMode());
-    Printer.ln("Fit: " + sett.getFitToScreen());
-    Printer.ln("Linear: " + sett.getLinearFiltering());
-    Printer.ln("VSync: " + sett.getVSynchEnabled());
-    Printer.fin();
-  }
+		// other hints
+		glfwWindowHint(GLFW_SAMPLES, 0);
+		glfwWindowHint(GLFW_REFRESH_RATE, GLFW_DONT_CARE);
+		glfwWindowHint(GLFW_STEREO, GLFW_FALSE);
+		glfwWindowHint(GLFW_SRGB_CAPABLE, GLFW_FALSE);
+		glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
+		glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 
-  void makeVisable() {
-    GLFW.glfwShowWindow(this.window);
-    GLFW.glfwFocusWindow(this.window);
-    macToggleNativeFullscreen();
-  }
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+		glfwWindowHint(GLFW_CONTEXT_ROBUSTNESS, GLFW_NO_ROBUSTNESS);
+		glfwWindowHint(GLFW_CONTEXT_RELEASE_BEHAVIOR, GLFW_ANY_RELEASE_BEHAVIOR);
+		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL11.GL_TRUE);
+		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, debugAll ? GLFW_TRUE : GLFW_FALSE);
 
-  final void setTexture(TextureHolder texture) {
-    this.texture = texture;
-  }
+		glfwWindowHint(GLFW.GLFW_SCALE_FRAMEBUFFER, GLFW_TRUE);
+		
+		// if (Platform.get() == Platform.MACOSX) {
+		// glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GL11.GL_FALSE);
+		// }
 
-  void flushRenderer() {
-    this.renderer.flush();
-    if (this.texture != null) {
-      this.texture.flush();
-    }
-  }
+		new Displays();
+			
+		printSettings(sett);
 
-  boolean swapAndCheckClose() {
-    if (this.debugAll && (this.chi & 0xFF) == 0) {
-      GlHelper.checkErrors();
-    }
-    if (this.bi == -1) {
-      this.bi = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
-    }
-    GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, 0);
-    GLFW.glfwSwapBuffers(this.window);
-    GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, this.bi);
-    this.windowIsFocused = GLFW.glfwGetWindowAttrib(this.window, GLFW.GLFW_FOCUSED) == 1;
-    this.diagnose(false);
-    if (this.debugAll && (this.chi & 0xFF) == 0) {
-      GlHelper.checkErrors();
-    }
-    ++this.chi;
-    return !GLFW.glfwWindowShouldClose(this.window);
-  }
+		Printer.ln("GRAPHICS");
 
-  private void diagnose(boolean force) {
-    if (diagnosing) {
-      if (force) {
-        Printer.ln("force");
-      }
-      if (++diagnoseTimer == 60 || force) {
-        diagnoseTimer = 0;
-        GlHelper.diagnozeMem();
-      }
-      GlHelper.checkErrors();
-    }
-  }
+		DisplayMode wanted = sett.display();
+		int dispWidth = wanted.width;
+		int dispHeight = wanted.height;
+	
+		nativeWidth = sett.getNativeWidth();
+		nativeHeight = sett.getNativeHeight();
 
-  public boolean focused() {
-    return this.windowIsFocused;
-  }
+		refreshRate = wanted.refresh;
+		glfwWindowHint(GLFW_REFRESH_RATE, refreshRate);
 
-  void pollEvents() {
-    GLFW.glfwPollEvents();
-  }
+		DisplayMode current = Displays.current(sett.monitor());
+		if (!wanted.fullScreen) {
+			if (dispWidth > current.width
+					|| dispHeight > current.height) {
+				dispWidth = current.width;
+				dispHeight = current.height;
+			}
+		}
+		displayWidth = dispWidth;
+		displayHeight = dispHeight;
 
-  long getWindow() {
-    return this.window;
-  }
+		
+		boolean fullscreen = wanted.fullScreen || (displayWidth == current.width && displayHeight == current.height);
+		if (sett.windowFullFull())
+			fullscreen = false;
+		glfwWindowHint(GLFW_AUTO_ICONIFY, sett.autoIconify() ? GLFW_TRUE : GLFW_FALSE);
+		
+		
+		
+		boolean dec = sett.decoratedWindow();
+		
+		if (fullscreen){
+			GLFWVidMode vm = GLFW.glfwGetVideoMode(Displays.pointer(sett.monitor()));
+			glfwWindowHint(GLFW_RED_BITS, vm.redBits());
+			glfwWindowHint(GLFW_GREEN_BITS, vm.greenBits());
+			glfwWindowHint(GLFW_BLUE_BITS, vm.blueBits());
+			glfwWindowHint(GLFW_REFRESH_RATE, vm.refreshRate());
+		}else{
+			glfwWindowHint(GLFW_DECORATED, dec ? GLFW_TRUE : GLFW_FALSE);
+		}
+		
+		try {
+			Printer.ln("---attempting resolution: " + displayWidth + "x" + dispHeight + ", " + refreshRate + "Hz, "
+					+ (fullscreen?(wanted.fullScreen?"fullscreen":"borderless"):"windowed")
+					+ ", monitor " + sett.monitor() + " (" + glfwGetMonitorName(Displays.pointer(sett.monitor())) + ")");
+			
+			window = glfwCreateWindow(displayWidth, displayHeight, sett.getWindowName(),
+					fullscreen ? Displays.pointer(sett.monitor()) : NULL, NULL);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw error.get("window create " + e);
+		}
+		
+		
+		//remove this if if trouble
+//		if (fullscreen) {
+//			GLFWVidMode vm = GLFW.glfwGetVideoMode(Displays.pointer(sett.monitor()));
+//			glfwWindowHint(GLFW_RED_BITS, vm.redBits());
+//			glfwWindowHint(GLFW_GREEN_BITS, vm.greenBits());
+//			glfwWindowHint(GLFW_BLUE_BITS, vm.blueBits());
+//			glfwWindowHint(GLFW_REFRESH_RATE, vm.refreshRate());
+//			try {
+//				window = glfwCreateWindow(displayWidth, displayHeight, sett.getWindowName(),
+//						Displays.pointer(sett.monitor()), NULL);
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//				throw error.get();
+//			}
+//			
+//		}else {
+//			glfwWindowHint(GLFW_DECORATED, dec ? GLFW_TRUE : GLFW_FALSE);
+//			
+//
+//			try {
+//				Printer.ln("---attempting resolution: " + displayWidth + "x" + dispHeight + " " + wanted.fullScreen + " "
+//						+ refreshRate + " " + sett.monitor());
+//				
+//				// Monitor is specified for full screen and for borderless full-size
+//				// Monitor is NULL for decorated windows
+//				window = glfwCreateWindow(displayWidth, displayHeight, sett.getWindowName(),
+//						wanted.fullScreen ? Displays.pointer(sett.monitor()) : NULL, NULL);
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//				throw error.get();
+//			}
+//		}
 
-  void dis() {
-    if (this.renderer != null) {
-      this.renderer.dis();
-    }
-    this.gl.dispose();
-    Callbacks.glfwFreeCallbacks(this.window);
-    GLFW.glfwDestroyWindow(this.window);
-    GLFW.glfwTerminate();
-    GLFWErrorCallback e = GLFW.glfwSetErrorCallback(null);
-    if (e != null) {
-      e.free();
-    }
-    Printer.ln(GraphicContext.class + " was sucessfully destroyed");
-  }
+		if (window == NULL) {
+			throw error.get("window is null");
+		}
 
-  static void terminate() {
-  }
+		{
+			int[] dx = new int[1];
+			int[] dy = new int[1];
 
-  boolean isFocused() {
-    return this.windowIsFocused;
-  }
+			// Decorated windows are now moved 1/4 into screen (see launcher window)
+			glfwGetMonitorPos(Displays.pointer(sett.monitor()), dx, dy);
+			if (!fullscreen && dec) {
+				int x1 = (Displays.current(sett.monitor()).width - displayWidth) / 4;
+				int y1 = (Displays.current(sett.monitor()).height - displayHeight) / 4;
+				if (x1 < 0)
+					x1 = 0;
+				if (y1 < 0)
+					y1 = 0;
 
-  void takeScreenShot() {
-    String s = FileManager.NAME.timeStampString(String.valueOf(this.screenShotPath) + "shot");
-    SnakeImage image = new SnakeImage(this.nativeWidth, this.nativeHeight);
-    this.copyFB(image, 0, 0);
-    image.save(String.valueOf(s) + ".png");
-    System.gc();
-  }
+				if (sett.decoratedWindow())
+					y1 += 30;
+				glfwSetWindowPos(window, x1 + dx[0], y1 + dy[0]);
+			}
+		}
 
-  public void makeScreenShot() {
-    if (this.screenShotPath == null) {
-      return;
-    }
-    new CORE.GlJob() {
+		String icons = sett.getIconFolder();
 
-      @Override
-      protected void doJob() {
-        GraphicContext.this.takeScreenShot();
-      }
-    }.perform();
-  }
+		if (icons != null)
+			_IconLoader.setIcon(window, icons);
+		else
+			Printer.ln("NOTE: no icon-folder specified");
 
-  void copyFB(SnakeImage image, int startX, int startY) {
-    ByteBuffer buff = this.gl.getFramePixels(this.nativeWidth, this.nativeHeight);
-    int x = 0;
-    while (x < this.nativeWidth) {
-      int x1 = startX + x;
-      if (x1 < image.width) {
-        int y = 0;
-        while (y < this.nativeHeight) {
-          int y1 = startY + this.nativeHeight - (y + 1);
-          if (y1 < image.height) {
-            int i = (x + this.nativeWidth * y) * 4;
-            int r = buff.get(i) & 0xFF;
-            int g = buff.get(i + 1) & 0xFF;
-            int b = buff.get(i + 2) & 0xFF;
-            image.rgb.set(x1, y1, r, g, b, 255);
-          }
-          ++y;
-        }
-      }
-      ++x;
-    }
-  }
+		// Make the OpenGL context current
+		try {
+			glfwMakeContextCurrent(window);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw error.get("make current " + e);
+		}
 
-  void copyFB(SnakeImage image, int startX, int startY, int scale) {
-    ByteBuffer buff = this.gl.getFramePixels(this.nativeWidth, this.nativeHeight);
-    int x = 0;
-    while (x < this.nativeWidth / scale) {
-      int x1 = startX + x;
-      if (x1 < image.width) {
-        int y = 0;
-        while (y < this.nativeHeight / scale) {
-          int y1 = startY + this.nativeHeight / scale - (y + 1);
-          if (y1 < image.height) {
-            int i = (x * scale + this.nativeWidth * y * scale) * 4;
-            int r = buff.get(i) & 0xFF;
-            int g = buff.get(i + 1) & 0xFF;
-            int b = buff.get(i + 2) & 0xFF;
-            image.rgb.set(x1, y1, r, g, b, 255);
-          }
-          ++y;
-        }
-      }
-      ++x;
-    }
-  }
+		long monitor = glfwGetWindowMonitor(window);
+		if (monitor == 0) {
+			monitor = glfwGetPrimaryMonitor();
+		}
+		GLFWVidMode vidMode = glfwGetVideoMode(monitor);
+		Printer.ln("---Setting FPS to " + vidMode.refreshRate());
+		int swapInterval = 0;
 
-  private class Error {
-    private String mess;
+		if (sett.getVSynchEnabled() || sett.vsyncAdaptive()) {
+			swapInterval = 1;
+			int r = refreshRate;
+			while (vidMode.refreshRate() >= r * 2) {
+				r *= 2;
+				swapInterval++;
+			}
+			if (sett.vsyncAdaptive() && (glfwExtensionSupported("WGL_EXT_swap_control_tear")
+					|| glfwExtensionSupported("GLX_EXT_swap_control_tear"))) {
+				Printer.ln("---'Adaptive' Vsync enabled (" + swapInterval + ")");
+				swapInterval *= -1;
+			}
+		}
 
-    public Error() {
-      GraphicsCardGetter g = new GraphicsCardGetter();
-      this.mess = "The game failed setting up openGl on your graphics card. This is likeley because your graphics card has no opengl 3.3 support. Some PC's have multiple graphics cards. In this case, try configuring the app to use the other.graphics card in graphic card's control panel. (You may need to do this for java as well.) ";
-      this.mess = String.valueOf(this.mess) + System.lineSeparator();
-      this.mess = String.valueOf(this.mess) + "Current graphics card: ";
-      this.mess = String.valueOf(this.mess) + g.version();
-      this.mess = String.valueOf(this.mess) + System.lineSeparator();
-      this.mess = String.valueOf(this.mess) + System.lineSeparator();
-      this.mess = String.valueOf(this.mess)
-          + "If your graphics card does not support opengl 3.3 or higher, please do not report this error.";
-      if (g.version() == null) {
-        throw this.get("version");
-      }
-    }
+		glfwSwapInterval(swapInterval);
 
-    Errors.GameError get(String message) {
-      return new Errors.GameError(String.valueOf(this.mess) + System.lineSeparator() + message);
-    }
-  }
+		Printer.ln("---created resolution: " + vidMode.width() + "x" + vidMode.height() + ", " + vidMode.refreshRate()
+				+ "Hz" + (sett.getVSynchEnabled() ? ", vsync: " + swapInterval : ""));
+		Printer.ln("---LWJGL: " + org.lwjgl.Version.getVersion());
+		Printer.ln("---GLFW: " + glfwGetVersionString());
 
-  //
+		gl = new GlHelper(sett.getNativeWidth(), sett.getNativeHeight(), debugAll);
+		if (!GL.getCapabilities().OpenGL33)
+			throw error.get("gl Capabilities");
 
-  private LSettings getLSettings() {
-    try {
-      Object s = init.settings.S.get();
-      Class<? extends Object> c = s.getClass();
-      Field f = c.getDeclaredField("settings");
-      f.setAccessible(true);
-      return (LSettings) f.get(s);
-    } catch (ReflectiveOperationException e) {
-      throw new RuntimeException("Can't access S.settings", e);
-    }
-  }
+		if (OS.get() == OS.MAC) {
+			blitArea = new Coo(GlHelper.FBSize());
+		} else {
+			IntBuffer w = BufferUtils.createIntBuffer(1);
+			IntBuffer h = BufferUtils.createIntBuffer(1);
+			glfwGetFramebufferSize(window, w, h);
+			Coo sc = (new Coo(w.get(), h.get()));
+			blitArea = new Coo(sc.x(), sc.y());
+		}
+
+		Printer.ln("---BLIT: " + blitArea.x() + "x" + blitArea.y());
+		Printer.fin();
+
+		switch (sett.getRenderMode()) {
+		case 0:
+			renderer = new RendererDebug(sett, sett.getPointSize());
+			break;
+		default:
+			renderer = new RendererDeffered(sett, sett.getPointSize());
+			break;
+		}
+
+		glfwFocusWindow(window);
+
+		GlHelper.checkErrors();
+
+	}
+
+	private class Error {
+
+		private String mess;
+
+		public Error() {
+
+			GraphicsCardGetter g = new GraphicsCardGetter();
+			mess = "The game failed setting up openGl on your graphics card. This is likeley "
+					+ "because your graphics card has no opengl 3.3 support. Some PC's have multiple graphics cards. In this case, try configuring the app to use the other."
+					+ "graphics card in graphic card's control panel. (You may need to do this for java as well.) ";
+
+			mess += System.lineSeparator();
+
+			mess += "Current graphics card: ";
+			mess += g.version();
+
+			mess += System.lineSeparator();
+			mess += System.lineSeparator();
+
+			mess += "If your graphics card does not support opengl 3.3 or higher, please do not report this error.";
+			if (g.version() == null)
+				throw get("version");
+
+		}
+
+		Errors.GameError get(String message) {
+			return new GameError(mess + System.lineSeparator() + message);
+		}
+
+	}
+
+	public String render() {
+		return GlHelper.renderer;
+	}
+
+	public String renderV() {
+		return GlHelper.rendererV;
+	}
+
+	private void printSettings(SETTINGS sett) {
+		Printer.ln("SETTINGS");
+		Printer.ln("Debug: " + sett.debugMode());
+		Printer.ln("Native Screen: " + sett.getNativeWidth() + "x" + sett.getNativeHeight());
+		Printer.ln("Display: " + sett.display());
+		Printer.ln("Full: " + sett.display().fullScreen);
+		Printer.ln("Mode: " + sett.getRenderMode());
+		Printer.ln("Fit: " + sett.getFitToScreen());
+		Printer.ln("Linear: " + sett.getLinearFiltering());
+		Printer.ln("VSync: " + sett.getVSynchEnabled());
+		Printer.fin();
+	}
+
+	void makeVisable() {
+		glfwShowWindow(window);
+		glfwFocusWindow(window);
+	}
+
+	final void setTexture(TextureHolder texture) {
+		this.texture = texture;
+	}
+	
+	void flushRenderer() {
+		renderer.flush();
+		if (texture != null)
+			texture.flush();
+	}
+
+	int chi = 0;
+	int bi = -1;
+	
+	
+	boolean swapAndCheckClose() {
+		if (debugAll && (chi & 0x0FF) == 0)
+			GlHelper.checkErrors();
+		if (bi == -1)
+			bi = glGetInteger(GL_READ_FRAMEBUFFER_BINDING);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+		glfwSwapBuffers(window);
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, bi);
+		windowIsFocused = glfwGetWindowAttrib(window, GLFW_FOCUSED) == 1;
+		diagnose(false);
+		if (debugAll && (chi & 0x0FF) == 0)
+			GlHelper.checkErrors();
+		chi ++;
+		return !glfwWindowShouldClose(window);
+	}
+
+	private void diagnose(boolean force) {
+		if (diagnosing) {
+			if (force)
+				Printer.ln("force");
+
+			diagnoseTimer++;
+			if (diagnoseTimer == 60 || force) {
+				diagnoseTimer = 0;
+				GlHelper.diagnozeMem();
+
+			}
+			GlHelper.checkErrors();
+		}
+	}
+
+	public boolean focused() {
+		return windowIsFocused;
+	}
+
+	void pollEvents() {
+		glfwPollEvents();
+	}
+
+	long getWindow() {
+		return window;
+	}
+
+	void dis() {
+
+		if (renderer != null)
+			renderer.dis();
+
+		gl.dispose();
+
+		Callbacks.glfwFreeCallbacks(window);
+		glfwDestroyWindow(window);
+
+		glfwTerminate();
+		GLFWErrorCallback e = glfwSetErrorCallback(null);
+		if (e != null)
+			e.free();
+
+		Printer.ln(GraphicContext.class + " was sucessfully destroyed");
+
+	}
+
+	static void terminate() {
+		// glfwTerminate();
+	}
+
+	boolean isFocused() {
+		return windowIsFocused;
+	}
+
+	void takeScreenShot() {
+		String s = FileManager.NAME.timeStampString(screenShotPath + "shot");
+		SnakeImage image = new SnakeImage(nativeWidth, nativeHeight);
+		copyFB(image, 0, 0);
+		image.save(s + ".png");
+		System.gc();
+
+	}
+
+	public void makeScreenShot() {
+		if (screenShotPath == null)
+			return;
+		new CORE.GlJob() {
+			@Override
+			protected void doJob() {
+				takeScreenShot();
+			}
+		}.perform();
+		;
+
+	}
+
+	void copyFB(SnakeImage image, int startX, int startY) {
+		ByteBuffer buff = gl.getFramePixels(nativeWidth, nativeHeight);
+		for (int x = 0; x < nativeWidth; x++) {
+			int x1 = startX + x;
+			if (x1 >= image.width)
+				continue;
+			for (int y = 0; y < nativeHeight; y++) {
+				int y1 = startY + nativeHeight - (y + 1);
+				if (y1 >= image.height)
+					continue;
+				int i = (x + (nativeWidth * (y))) * 4;
+				int r = buff.get(i) & 0xFF;
+				int g = buff.get(i + 1) & 0xFF;
+				int b = buff.get(i + 2) & 0xFF;
+				image.rgb.set(x1, y1, r, g, b, 0xFF);
+
+			}
+		}
+	}
+
+	void copyFB(SnakeImage image, int startX, int startY, int scale) {
+		ByteBuffer buff = gl.getFramePixels(nativeWidth, nativeHeight);
+		for (int x = 0; x < nativeWidth / scale; x++) {
+			int x1 = startX + x;
+			if (x1 >= image.width)
+				continue;
+			for (int y = 0; y < nativeHeight / scale; y++) {
+				int y1 = startY + nativeHeight / scale - (y + 1);
+				if (y1 >= image.height)
+					continue;
+				int i = (x * scale + (nativeWidth * (y) * scale)) * 4;
+				int r = buff.get(i) & 0xFF;
+				int g = buff.get(i + 1) & 0xFF;
+				int b = buff.get(i + 2) & 0xFF;
+				image.rgb.set(x1, y1, r, g, b, 0xFF);
+
+			}
+		}
+	}
+
 }
