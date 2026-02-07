@@ -8,11 +8,15 @@ import org.lwjgl.Version;
 import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
+import org.lwjgl.glfw.GLFWNativeCocoa;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.Configuration;
+import org.lwjgl.system.JNI;
+import org.lwjgl.system.macosx.ObjCRuntime;
+
 import snake2d.CORE;
 import snake2d.Displays;
 import snake2d.Errors;
@@ -86,8 +90,11 @@ public class GraphicContext {
     if (!GLFW.glfwInit()) {
       throw new IllegalStateException("Unable to initialize GLFW");
     }
+    boolean mac = OS.get() == OS.MAC;
+    boolean dec = mac || sett.decoratedWindow();
     GLFW.glfwDefaultWindowHints();
-    GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, GLFW.GLFW_FALSE);
+    GLFW.glfwWindowHint(GLFW.GLFW_RESIZABLE, mac ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
+    GLFW.glfwWindowHint(GLFW.GLFW_DECORATED, dec ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
     GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
     GLFW.glfwWindowHint(GLFW.GLFW_FOCUSED, GLFW.GLFW_TRUE);
     GLFW.glfwWindowHint(GLFW.GLFW_FOCUS_ON_SHOW, GLFW.GLFW_TRUE);
@@ -112,14 +119,14 @@ public class GraphicContext {
     GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, GLFW.GLFW_TRUE);
     GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_DEBUG, this.debugAll ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
     GLFW.glfwWindowHint(GLFW.GLFW_SCALE_FRAMEBUFFER, GLFW.GLFW_TRUE);
-    if (OS.get() == OS.MAC) {
-      GLFW.glfwWindowHint(GLFW.GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW.GLFW_FALSE);
-    }
+    GLFW.glfwWindowHint(GLFW.GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW.GLFW_FALSE);
+    GLFW.glfwWindowHint(GLFW.GLFW_AUTO_ICONIFY, sett.autoIconify() ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
     new Displays();
     this.printSettings(sett);
     Printer.ln("GRAPHICS");
     Displays.DisplayMode wanted = sett.display();
     Printer.ln("WANTED: " + wanted + ", " + (wanted.fullScreen ? "fullscreen" : "windowed"));
+    long pointer = Displays.pointer(sett.monitor());
     int dispWidth = wanted.width;
     int dispHeight = wanted.height;
     this.nativeWidth = sett.getNativeWidth();
@@ -133,37 +140,32 @@ public class GraphicContext {
       dispHeight = current.height;
     }
     fullscreen = wanted.fullScreen || dispWidth == current.width && dispHeight == current.height;
-    boolean dec = sett.decoratedWindow();
     if (fullscreen && sett.windowFullFull()) {
       fullscreen = false;
       IntBuffer wx = BufferUtils.createIntBuffer(1);
       IntBuffer wy = BufferUtils.createIntBuffer(1);
       IntBuffer ww = BufferUtils.createIntBuffer(1);
       IntBuffer wh = BufferUtils.createIntBuffer(1);
-      GLFW.glfwGetMonitorWorkarea(Displays.pointer(sett.monitor()), wx, wy, ww, wh);
+      GLFW.glfwGetMonitorWorkarea(pointer, wx, wy, ww, wh);
       dispWidth = ww.get();
-      dispHeight = wh.get() - (dec ? 30 : 0);
-      Printer.ln("WORKAREA: " + wx.get() + "x" + wy.get() + ", " + dispWidth + "x" + dispHeight);
+      dispHeight = wh.get();
     }
     this.displayWidth = dispWidth;
     this.displayHeight = dispHeight;
-    GLFW.glfwWindowHint(GLFW.GLFW_AUTO_ICONIFY, sett.autoIconify() ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
     if (fullscreen) {
-      GLFWVidMode vm = GLFW.glfwGetVideoMode(Displays.pointer(sett.monitor()));
+      GLFWVidMode vm = GLFW.glfwGetVideoMode(pointer);
       GLFW.glfwWindowHint(GLFW.GLFW_RED_BITS, vm.redBits());
       GLFW.glfwWindowHint(GLFW.GLFW_GREEN_BITS, vm.greenBits());
       GLFW.glfwWindowHint(GLFW.GLFW_BLUE_BITS, vm.blueBits());
       GLFW.glfwWindowHint(GLFW.GLFW_REFRESH_RATE, vm.refreshRate());
-    } else {
-      GLFW.glfwWindowHint(GLFW.GLFW_DECORATED, dec ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
     }
     try {
       Printer.ln(
           "---attempting resolution: " + this.displayWidth + "x" + this.displayHeight + ", " + this.refreshRate + "Hz, "
               + (fullscreen ? (wanted.fullScreen ? "fullscreen" : "borderless") : "windowed") + ", monitor "
-              + sett.monitor() + " (" + GLFW.glfwGetMonitorName(Displays.pointer(sett.monitor())) + ")");
+              + sett.monitor() + " (" + GLFW.glfwGetMonitorName(pointer) + ")");
       this.window = GLFW.glfwCreateWindow(this.displayWidth, this.displayHeight, sett.getWindowName(),
-          fullscreen ? Displays.pointer(sett.monitor()) : 0L, 0L);
+          fullscreen ? pointer : 0L, 0L);
     } catch (Exception e) {
       e.printStackTrace();
       throw error.get("window create " + e);
@@ -173,7 +175,7 @@ public class GraphicContext {
     }
     int[] dx = new int[1];
     int[] dy = new int[1];
-    GLFW.glfwGetMonitorPos(Displays.pointer(sett.monitor()), dx, dy);
+    GLFW.glfwGetMonitorPos(pointer, dx, dy);
     if (!fullscreen && dec) {
       int x1 = (Displays.current((int) sett.monitor()).width - this.displayWidth) / 4;
       int y1 = (Displays.current((int) sett.monitor()).height - this.displayHeight) / 4;
@@ -253,6 +255,27 @@ public class GraphicContext {
     // System.exit(0);
   }
 
+  private void macToggleNativeFullscreen() {
+    if (OS.get() != OS.MAC)
+      return;
+
+    Printer.ln("Attempting to toggle native fullscreen on Mac...");
+
+    // NSWindow* из GLFW
+    long nsWindow = GLFWNativeCocoa.glfwGetCocoaWindow(this.window);
+    if (nsWindow == 0L) {
+      Printer.ln("Cocoa: nsWindow == 0 (can't toggle fullscreen)");
+      return;
+    }
+
+    // selector: toggleFullScreen:
+    long selToggle = ObjCRuntime.sel_registerName("toggleFullScreen:");
+
+    // В Objective-C метод принимает sender (id), можно передать nil
+    // Важно: используем invokePPV (receiver, selector, arg) -> void
+    JNI.invokePPV(nsWindow, selToggle, ObjCRuntime.nil, ObjCRuntime.getLibrary().getFunctionAddress("objc_msgSend"));
+  }
+
   public String render() {
     return GlHelper.renderer;
   }
@@ -277,6 +300,7 @@ public class GraphicContext {
   void makeVisable() {
     GLFW.glfwShowWindow(this.window);
     GLFW.glfwFocusWindow(this.window);
+    macToggleNativeFullscreen();
   }
 
   final void setTexture(TextureHolder texture) {
