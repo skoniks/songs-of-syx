@@ -116,6 +116,7 @@ public class GraphicContext {
     this.printSettings(sett);
     Printer.ln("GRAPHICS");
     Displays.DisplayMode wanted = sett.display();
+    Printer.ln("WANTED: " + wanted);
     int dispWidth = wanted.width;
     int dispHeight = wanted.height;
     this.nativeWidth = sett.getNativeWidth();
@@ -123,6 +124,8 @@ public class GraphicContext {
     this.refreshRate = wanted.refresh;
     GLFW.glfwWindowHint(GLFW.GLFW_REFRESH_RATE, this.refreshRate);
     Displays.DisplayMode current = Displays.current(sett.monitor());
+    Printer.ln("CURRENT: " + current);
+    // System.exit(0);
     if (!(wanted.fullScreen || dispWidth <= current.width && dispHeight <= current.height)) {
       dispWidth = current.width;
       dispHeight = current.height;
@@ -145,9 +148,10 @@ public class GraphicContext {
       GLFW.glfwWindowHint(GLFW.GLFW_DECORATED, dec ? GLFW.GLFW_TRUE : GLFW.GLFW_FALSE);
     }
     try {
-      Printer.ln("---attempting resolution: " + this.displayWidth + "x" + dispHeight + ", " + this.refreshRate + "Hz, "
-          + (fullscreen ? (wanted.fullScreen ? "fullscreen" : "borderless") : "windowed") + ", monitor "
-          + sett.monitor() + " (" + GLFW.glfwGetMonitorName(Displays.pointer(sett.monitor())) + ")");
+      Printer.ln(
+          "---attempting resolution: " + this.displayWidth + "x" + this.displayHeight + ", " + this.refreshRate + "Hz, "
+              + (fullscreen ? (wanted.fullScreen ? "fullscreen" : "borderless") : "windowed") + ", monitor "
+              + sett.monitor() + " (" + GLFW.glfwGetMonitorName(Displays.pointer(sett.monitor())) + ")");
       this.window = GLFW.glfwCreateWindow(this.displayWidth, this.displayHeight, sett.getWindowName(),
           fullscreen ? Displays.pointer(sett.monitor()) : 0L, 0L);
     } catch (Exception e) {
@@ -280,11 +284,11 @@ public class GraphicContext {
       GlHelper.checkErrors();
     }
     if (this.bi == -1) {
-      this.bi = GL11.glGetInteger(36010);
+      this.bi = GL11.glGetInteger(GL30.GL_READ_FRAMEBUFFER_BINDING);
     }
-    GL30.glBindFramebuffer(36008, 0);
+    GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, 0);
     GLFW.glfwSwapBuffers(this.window);
-    GL30.glBindFramebuffer(36008, this.bi);
+    GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, this.bi);
     this.windowIsFocused = GLFW.glfwGetWindowAttrib(this.window, GLFW.GLFW_FOCUSED) == 1;
     this.diagnose(false);
     if (this.debugAll && (this.chi & 0xFF) == 0) {
