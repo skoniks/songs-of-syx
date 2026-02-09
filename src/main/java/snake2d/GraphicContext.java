@@ -209,6 +209,7 @@ public class GraphicContext {
     Printer.ln("GRAPHICS");
 
     DisplayMode wanted = sett.display();
+    int refRate = wanted.refresh;
     int dispWidth = wanted.width;
     int dispHeight = wanted.height;
 
@@ -231,20 +232,23 @@ public class GraphicContext {
       GLFW.glfwGetMonitorWorkarea(pointer, wx, wy, ww, wh);
       dispWidth = ww.get();
       dispHeight = wh.get();
+      refRate = 60;
     } else { // windowed
       glfwWindowHint(GLFW_DECORATED, decorated ? GLFW_TRUE : GLFW_FALSE);
       if (dispWidth > current.width || dispHeight > current.height) {
         dispWidth = current.width;
         dispHeight = current.height;
       }
+      refRate = current.refresh;
     }
 
+    refreshRate = refRate;
     displayWidth = dispWidth;
     displayHeight = dispHeight;
     nativeWidth = sett.getNativeWidth();
     nativeHeight = sett.getNativeHeight();
 
-    glfwWindowHint(GLFW_REFRESH_RATE, refreshRate = wanted.refresh);
+    glfwWindowHint(GLFW_REFRESH_RATE, refreshRate);
     glfwWindowHint(GLFW_AUTO_ICONIFY, sett.autoIconify() ? GLFW_TRUE : GLFW_FALSE);
 
     try {
