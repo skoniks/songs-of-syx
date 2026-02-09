@@ -43,6 +43,7 @@ import static org.lwjgl.glfw.GLFW.glfwFocusWindow;
 import static org.lwjgl.glfw.GLFW.glfwGetFramebufferSize;
 import static org.lwjgl.glfw.GLFW.glfwGetMonitorName;
 import static org.lwjgl.glfw.GLFW.glfwGetMonitorPos;
+import static org.lwjgl.glfw.GLFW.glfwGetMonitorWorkarea;
 import static org.lwjgl.glfw.GLFW.glfwGetPrimaryMonitor;
 import static org.lwjgl.glfw.GLFW.glfwGetVersionString;
 import static org.lwjgl.glfw.GLFW.glfwGetVideoMode;
@@ -72,7 +73,6 @@ import java.nio.IntBuffer;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.Callbacks;
-import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWNativeCocoa;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -132,9 +132,8 @@ public class GraphicContext {
         screenShotPath = sett.getScreenshotFolder();
       else {
         File f = new File("screenshots");
-        if (f.exists() && !f.isDirectory()) {
+        if (f.exists() && !f.isDirectory())
           f.delete();
-        }
         if (!f.exists())
           f.mkdirs();
         screenShotPath = f.getAbsolutePath() + File.separator;
@@ -219,7 +218,7 @@ public class GraphicContext {
     boolean decorated = sett.decoratedWindow();
 
     if (fullscreen) {
-      GLFWVidMode vm = GLFW.glfwGetVideoMode(pointer);
+      GLFWVidMode vm = glfwGetVideoMode(pointer);
       glfwWindowHint(GLFW_RED_BITS, vm.redBits());
       glfwWindowHint(GLFW_GREEN_BITS, vm.greenBits());
       glfwWindowHint(GLFW_BLUE_BITS, vm.blueBits());
@@ -229,17 +228,17 @@ public class GraphicContext {
       IntBuffer wy = BufferUtils.createIntBuffer(1);
       IntBuffer ww = BufferUtils.createIntBuffer(1);
       IntBuffer wh = BufferUtils.createIntBuffer(1);
-      GLFW.glfwGetMonitorWorkarea(pointer, wx, wy, ww, wh);
+      glfwGetMonitorWorkarea(pointer, wx, wy, ww, wh);
       dispWidth = ww.get();
       dispHeight = wh.get();
-      refRate = 60;
+      refRate = 60; // fps lock
     } else { // windowed
       glfwWindowHint(GLFW_DECORATED, decorated ? GLFW_TRUE : GLFW_FALSE);
       if (dispWidth > current.width || dispHeight > current.height) {
         dispWidth = current.width;
         dispHeight = current.height;
       }
-      refRate = current.refresh;
+      refRate = 60; // fps lock
     }
 
     refreshRate = refRate;

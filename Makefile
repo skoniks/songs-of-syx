@@ -17,6 +17,7 @@ build:
 patch:
 	cp ./steam_appid.txt ./app
 	cp ./build/libs/patch.jar ./app
+	cp ./build/libs/patch.jar ./mod/FixRetinaDisplay/V70/script
 
 run-game:
 	cd ./app && $(JRE) $(JVM_OPTS) -server \

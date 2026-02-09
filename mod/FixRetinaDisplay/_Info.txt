@@ -1,0 +1,7 @@
+VERSION: "1.0.0",
+GAME_VERSION_MAJOR: 70,
+GAME_VERSION_MINOR: 33,
+NAME: "Fix Retina Display (Mac)",
+DESC: "Fixes borderless screen resolution and improve performance on Mac with Retina display",
+AUTHOR: "skoniks",
+INFO: "For Mac users only!",
